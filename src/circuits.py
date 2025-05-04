@@ -1,312 +1,169 @@
 #!/usr/bin/env python
-# Quantum circuit construction for spatial transcriptomics framework
+# Structure definitions for spatial transcriptomics framework
 
 import numpy as np
-from qiskit import QuantumCircuit
-from qiskit.circuit import Parameter, ParameterVector
 
-def create_vqe_ansatz(n_qubits, depth=2, entanglement='linear'):
+class CircuitTemplate:
     """
-    Create a hardware-efficient ansatz for VQE.
+    Class representing a circuit template for spatial transcriptomics.
+    This is a placeholder for the actual quantum circuit implementation.
+    """
     
-    Args:
-        n_qubits: Number of qubits
-        depth: Number of repetitions of rotation + entanglement layers
-        entanglement: Entanglement strategy ('linear', 'full', or 'circular')
+    def __init__(self, n_qubits, depth=2, entanglement_type='linear'):
+        """
+        Initialize a circuit template.
         
-    Returns:
-        Parameterized QuantumCircuit and list of parameters
-    """
-    # Create parameters - 3 rotations per qubit per layer
-    params = ParameterVector('θ', 3 * n_qubits * depth)
-    
-    # Create circuit
-    circuit = QuantumCircuit(n_qubits)
-    
-    # Initial rotation layer
-    param_idx = 0
-    for i in range(n_qubits):
-        circuit.rx(params[param_idx], i)
-        param_idx += 1
-        circuit.ry(params[param_idx], i)
-        param_idx += 1
-        circuit.rz(params[param_idx], i)
-        param_idx += 1
-    
-    # Repeated blocks of entanglement + rotation
-    for d in range(depth - 1):
-        # Entanglement layer
-        if entanglement == 'linear':
-            for i in range(n_qubits - 1):
-                circuit.cx(i, i + 1)
-        elif entanglement == 'full':
-            for i in range(n_qubits):
-                for j in range(i + 1, n_qubits):
-                    circuit.cx(i, j)
-        elif entanglement == 'circular':
-            for i in range(n_qubits):
-                circuit.cx(i, (i + 1) % n_qubits)
+        Args:
+            n_qubits: Number of qubits
+            depth: Depth of the circuit
+            entanglement_type: Type of entanglement pattern
+        """
+        self.n_qubits = n_qubits
+        self.depth = depth
+        self.entanglement_type = entanglement_type
+        
+        # Calculate number of parameters
+        if entanglement_type == 'vqe':
+            self.n_params = 3 * n_qubits * depth
+        elif entanglement_type == 'qaoa':
+            self.n_params = 2 * depth
         else:
-            raise ValueError(f"Unknown entanglement strategy: {entanglement}")
+            self.n_params = n_qubits * depth
+            
+    def get_parameter_count(self):
+        """Return the number of parameters for this circuit template."""
+        return self.n_params
         
-        # Rotation layer
-        for i in range(n_qubits):
-            circuit.rx(params[param_idx], i)
-            param_idx += 1
-            circuit.ry(params[param_idx], i)
-            param_idx += 1
-            circuit.rz(params[param_idx], i)
-            param_idx += 1
-    
-    return circuit, params
+    def __str__(self):
+        """String representation of the circuit template."""
+        return f"CircuitTemplate(qubits={self.n_qubits}, depth={self.depth}, type={self.entanglement_type})"
 
-def create_qaoa_circuit(n_qubits, p=1):
+def create_vqe_template(n_qubits, depth=2):
     """
-    Create a QAOA circuit for finding regions of high expression.
+    Create a VQE circuit template.
     
     Args:
         n_qubits: Number of qubits
-        p: Number of QAOA layers
+        depth: Circuit depth
         
     Returns:
-        Parameterized QuantumCircuit and list of parameters
+        CircuitTemplate for VQE
     """
-    # Create parameters - 2 parameters per layer
-    gamma = ParameterVector('γ', p)
-    beta = ParameterVector('β', p)
-    
-    # Create circuit
-    circuit = QuantumCircuit(n_qubits)
-    
-    # Initial state - superposition
-    for i in range(n_qubits):
-        circuit.h(i)
-    
-    # QAOA layers
-    for layer in range(p):
-        # Problem Hamiltonian evolution
-        # Note: this is a placeholder - the actual cost Hamiltonian 
-        # evolution circuit must be constructed based on the specific
-        # Hamiltonian terms in the problem
-        circuit.barrier()
-        # Cost operations will be added later when binding to specific Hamiltonian
-        circuit.barrier()
-        
-        # Mixer Hamiltonian evolution
-        for i in range(n_qubits):
-            circuit.rx(2 * beta[layer], i)
-    
-    # Measurement is typically added separately
-    
-    return circuit, (gamma, beta)
+    return CircuitTemplate(n_qubits, depth, 'vqe')
 
-def create_mixer_circuit(n_qubits, beta):
+def create_qaoa_template(n_qubits, p_steps=1):
     """
-    Create a mixer circuit for QAOA.
+    Create a QAOA circuit template.
     
     Args:
         n_qubits: Number of qubits
-        beta: Mixer parameter
+        p_steps: Number of QAOA layers
         
     Returns:
-        QuantumCircuit
+        CircuitTemplate for QAOA
     """
-    circuit = QuantumCircuit(n_qubits)
-    for i in range(n_qubits):
-        circuit.rx(2 * beta, i)
-    return circuit
+    return CircuitTemplate(n_qubits, p_steps, 'qaoa')
 
-def create_cost_circuit(hamiltonian, gamma):
+def estimate_resources(circuit_template):
     """
-    Create a cost circuit for QAOA based on a Hamiltonian.
+    Estimate computational resources needed for a given circuit template.
     
     Args:
-        hamiltonian: Hamiltonian operator (Qiskit operator object)
-        gamma: Cost parameter
+        circuit_template: CircuitTemplate object
         
     Returns:
-        QuantumCircuit
+        Dictionary of estimated resources
     """
-    # This is a simplified version - real implementation depends on the
-    # specific Hamiltonian terms and Qiskit version
-    from qiskit.opflow import PauliTrotterEvolution, Suzuki
-    from qiskit.opflow.evolutions import EvolutionFactory
+    n_qubits = circuit_template.n_qubits
+    depth = circuit_template.depth
     
-    try:
-        # Newer Qiskit versions
-        evolution = PauliTrotterEvolution(trotter_mode=Suzuki(order=1))
-        evolved_op = evolution.evolve(hamiltonian * gamma)
-        circuit = evolved_op.to_circuit()
-    except (ImportError, AttributeError):
-        # Fallback for older versions
-        evolution = EvolutionFactory.build(hamiltonian)
-        circuit = evolution.evolve(time=gamma).to_circuit()
+    # Simple estimates
+    gate_count = n_qubits * depth * 3  # Rough estimate
     
-    return circuit
-
-def create_gradient_circuit(n_qubits, param_index, param_value, delta=0.01, ansatz=None):
-    """
-    Create a circuit for parameter-shift based gradient calculation.
-    
-    Args:
-        n_qubits: Number of qubits
-        param_index: Index of parameter to calculate gradient for
-        param_value: Current value of the parameter
-        delta: Shift amount for parameter-shift rule
-        ansatz: Ansatz circuit to use (if None, creates a default ansatz)
-        
-    Returns:
-        Tuple of (plus_circuit, minus_circuit) for parameter-shift rule
-    """
-    if ansatz is None:
-        ansatz, params = create_vqe_ansatz(n_qubits)
+    if circuit_template.entanglement_type == 'vqe':
+        # VQE typically has more parameters
+        parameter_count = 3 * n_qubits * depth
+    elif circuit_template.entanglement_type == 'qaoa':
+        # QAOA has two parameters per layer
+        parameter_count = 2 * depth
     else:
-        # Extract parameters from ansatz
-        params = ansatz.parameters
+        parameter_count = n_qubits * depth
     
-    # Create parameter dictionaries for plus and minus shifts
-    plus_params = param_value + delta
-    minus_params = param_value - delta
-    
-    # Create parameter dictionaries
-    plus_dict = {params[param_index]: plus_params}
-    minus_dict = {params[param_index]: minus_params}
-    
-    # Bind parameters
-    plus_circuit = ansatz.bind_parameters(plus_dict)
-    minus_circuit = ansatz.bind_parameters(minus_dict)
-    
-    return plus_circuit, minus_circuit
+    return {
+        'qubits': n_qubits,
+        'depth': depth,
+        'estimated_gates': gate_count,
+        'parameters': parameter_count
+    }
 
-def add_measurements(circuit, qubits=None):
+def analyze_expression_patterns(expr_vector, spatial_weights=None):
     """
-    Add measurement operations to a circuit.
+    Analyze expression patterns to determine the optimal encoding strategy.
     
     Args:
-        circuit: QuantumCircuit to modify
-        qubits: Qubits to measure (if None, measure all)
+        expr_vector: Vector of gene expression values
+        spatial_weights: Optional spatial weights matrix
         
     Returns:
-        QuantumCircuit with measurements
+        Dictionary with analysis results
     """
-    n_qubits = circuit.num_qubits
+    # Basic statistics
+    mean_expr = np.mean(expr_vector)
+    std_expr = np.std(expr_vector)
+    max_expr = np.max(expr_vector)
+    min_expr = np.min(expr_vector)
     
-    if qubits is None:
-        qubits = range(n_qubits)
+    # Determine if spatial correlations are significant
+    spatial_significance = 0.0
+    if spatial_weights is not None:
+        # Calculate weighted expression
+        weighted_expr = np.zeros_like(expr_vector)
+        for i in range(len(expr_vector)):
+            if i < len(spatial_weights):
+                weighted_expr[i] = np.sum(expr_vector * spatial_weights[i])
+        
+        # Correlation between expression and weighted expression
+        # indicates spatial structure
+        correlation = np.corrcoef(expr_vector, weighted_expr)[0, 1]
+        spatial_significance = abs(correlation)
     
-    # Create new circuit to preserve the original
-    measured_circuit = circuit.copy()
+    # Recommend encoding strategy
+    if spatial_significance > 0.5:
+        recommended_method = "qaoa"
+    else:
+        recommended_method = "vqe"
     
-    # Add classical register
-    measured_circuit.measure_all()
-    
-    return measured_circuit
-
-def create_vqe_hamiltonian_evolution(hamiltonian, time=1.0):
-    """
-    Create a circuit implementing evolution under the given Hamiltonian.
-    
-    Args:
-        hamiltonian: Hamiltonian operator
-        time: Evolution time
-        
-    Returns:
-        QuantumCircuit implementing e^(-iHt)
-    """
-    try:
-        # Try newer Qiskit approach
-        from qiskit.opflow import PauliTrotterEvolution, Suzuki
-        
-        evolution = PauliTrotterEvolution(trotter_mode=Suzuki(order=1))
-        evolved_op = evolution.evolve(hamiltonian * time)
-        circuit = evolved_op.to_circuit()
-        return circuit
-    
-    except (ImportError, AttributeError):
-        # Fallback for older Qiskit versions
-        from qiskit.aqua.operators import WeightedPauliOperator
-        from qiskit.aqua.algorithms.single_sample import VQE
-        
-        if isinstance(hamiltonian, WeightedPauliOperator):
-            # Use built-in evolution method if available
-            circuit = hamiltonian.evolve(evo_time=time).to_circuit()
-            return circuit
-        else:
-            # Construct circuit manually based on Pauli terms
-            # This would be a simplified implementation
-            n_qubits = hamiltonian.num_qubits
-            circuit = QuantumCircuit(n_qubits)
-            
-            # Add warning
-            print("Warning: Full Hamiltonian evolution not implemented for this Qiskit version")
-            print("Using simplified approach without Trotterization")
-            
-            return circuit
-
-def evaluate_expectation(circuit, hamiltonian, backend=None, shots=1024):
-    """
-    Evaluate the expectation value of a Hamiltonian given a circuit state.
-    
-    Args:
-        circuit: QuantumCircuit
-        hamiltonian: Hamiltonian operator
-        backend: Qiskit backend to run on
-        shots: Number of shots for measurement
-        
-    Returns:
-        Expectation value
-    """
-    try:
-        # Try newer Qiskit approaches
-        from qiskit import Aer, transpile
-        from qiskit.primitives import Estimator
-        
-        # Use Estimator primitive if available
-        estimator = Estimator()
-        job = estimator.run([circuit], [hamiltonian])
-        result = job.result()
-        return result.values[0]
-    
-    except (ImportError, NameError):
-        # Fallback using statevector simulator
-        if backend is None:
-            from qiskit import Aer
-            backend = Aer.get_backend('statevector_simulator')
-        
-        from qiskit import transpile, execute
-        
-        # Execute circuit
-        circuit = transpile(circuit, backend)
-        job = execute(circuit, backend)
-        result = job.result()
-        
-        # Get statevector
-        statevector = result.get_statevector(circuit)
-        
-        # Compute expectation manually
-        # This is a simplified implementation, actual behavior depends on
-        # how the Hamiltonian is represented
-        try:
-            expectation = hamiltonian.evaluate_with_statevector(statevector)
-            return expectation.real
-        except AttributeError:
-            print("Warning: Hamiltonian expectation calculation not directly supported")
-            print("Would need custom implementation based on Hamiltonian structure")
-            return 0.0
+    return {
+        'mean_expression': mean_expr,
+        'std_expression': std_expr,
+        'max_expression': max_expr,
+        'min_expression': min_expr,
+        'spatial_significance': spatial_significance,
+        'recommended_method': recommended_method
+    }
 
 if __name__ == "__main__":
-    # Test ansatz creation
+    # Test template creation
     n_qubits = 4
-    ansatz, params = create_vqe_ansatz(n_qubits, depth=2)
-    print("VQE Ansatz:")
-    print(ansatz)
+    vqe_template = create_vqe_template(n_qubits, depth=2)
+    print("VQE Template:")
+    print(vqe_template)
     
-    # Test QAOA circuit creation
-    qaoa_circuit, (gamma, beta) = create_qaoa_circuit(n_qubits, p=1)
-    print("\nQAOA Circuit:")
-    print(qaoa_circuit)
+    # Test QAOA template creation
+    qaoa_template = create_qaoa_template(n_qubits, p_steps=1)
+    print("\nQAOA Template:")
+    print(qaoa_template)
     
-    # Measurement test
-    measured = add_measurements(ansatz)
-    print("\nCircuit with measurements:")
-    print(measured)
+    # Test resource estimation
+    vqe_resources = estimate_resources(vqe_template)
+    print("\nVQE estimated resources:")
+    for key, value in vqe_resources.items():
+        print(f"  {key}: {value}")
+        
+    # Test expression pattern analysis
+    test_expr = np.random.rand(n_qubits)
+    test_weights = np.random.rand(n_qubits, n_qubits)
+    analysis = analyze_expression_patterns(test_expr, test_weights)
+    print("\nExpression pattern analysis:")
+    for key, value in analysis.items():
+        print(f"  {key}: {value}")

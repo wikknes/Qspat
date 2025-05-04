@@ -19,9 +19,7 @@ vqe_solver = SpatialVQE(
     DATA_PATH,
     target_gene='Gene2',
     max_spots=16,
-    optimizer='cobyla',
-    ansatz_depth=2,
-    shots=1024
+    optimizer='cobyla'
 )
 
 print("Starting VQE preprocessing...")

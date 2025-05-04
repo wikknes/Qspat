@@ -82,9 +82,9 @@ The VQE algorithm successfully identified the spot with maximum Gene2 expression
 *Figure 2: VQE analysis results. Left: Original expression pattern of Gene2. Right: Probability distribution from VQE with the maximum probability spot highlighted in red.*
 
 Key findings:
-- Maximum expression was detected at coordinates approximately (0.5, 0.5)
+- Maximum expression was detected at coordinates approximately (0.24, 0.53)
 - The quantum state corresponding to this location had a probability of ~0.7
-- The energy of the final state was -0.98, close to the theoretical minimum of -1.0
+- The energy of the final state was -1.0, reaching the theoretical minimum
 - The algorithm converged within 65 iterations
 
 ## QAOA Analysis: High Expression Region Detection
@@ -123,8 +123,8 @@ The QAOA algorithm successfully identified a coherent region of high Gene2 expre
 *Figure 3: QAOA analysis results. Left: Original expression pattern of Gene2. Right: Identified high expression region with spots colored by their probability of inclusion.*
 
 Key findings:
-- A region with 5 spots was identified around the center of the grid
-- All spots in the region had expression values above 0.7
+- A region with 3 spots was identified near the center of the grid
+- The region includes 1 spot with expression value above 0.7
 - The region formed a spatially contiguous cluster
 - The algorithm balanced expression intensity with spatial coherence
 
@@ -177,9 +177,9 @@ The dry run was performed with the following computational requirements:
   - Matplotlib for visualization
 
 - **Performance Metrics**:
-  - VQE execution time: ~2.5 seconds
-  - QAOA execution time: ~1.8 seconds
-  - Total memory usage: <200MB
+  - VQE execution time: ~0.5 seconds (simulation mode)
+  - QAOA execution time: ~0.4 seconds (simulation mode)
+  - Total memory usage: <150MB
 
 ### Scaling Considerations
 
@@ -229,11 +229,11 @@ Based on the dry run results, several improvements are planned:
 
 The dry run successfully demonstrated the core capabilities of the Qspat framework:
 
-1. VQE can effectively identify maximum expression locations
-2. QAOA can detect spatially coherent regions of high expression
+1. VQE can effectively identify maximum expression locations (found at coordinates (0.24, 0.53))
+2. QAOA can detect spatially coherent regions of high expression (identified 3 spots in a coherent region)
 3. The quantum approaches provide complementary information about expression patterns
 4. The framework handles the complete pipeline from data preparation to results visualization
 
-While the current implementation is limited to small synthetic datasets, it provides a proof-of-concept for applying quantum computing to spatial transcriptomics analysis. The results suggest that with further development, quantum approaches could offer unique capabilities for analyzing complex spatial gene expression patterns, particularly as quantum hardware continues to advance.
+While the current implementation is limited to small synthetic datasets and relies on simulation due to Qiskit availability, it provides a proof-of-concept for applying quantum computing to spatial transcriptomics analysis. The results suggest that with further development, quantum approaches could offer unique capabilities for analyzing complex spatial gene expression patterns, particularly as quantum hardware continues to advance.
 
 This dry run establishes a foundation for further research and development in quantum-enhanced spatial transcriptomics analysis.
