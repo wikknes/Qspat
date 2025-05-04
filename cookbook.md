@@ -38,7 +38,7 @@ The framework leverages quantum computing capabilities to potentially provide co
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/qspat.git
+git clone https://github.com/wikknes/qspat.git
 cd qspat
 
 # Install required packages
