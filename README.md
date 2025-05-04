@@ -104,13 +104,6 @@ print(f"Found high expression region with {sum(region_mask)} spots")
 qaoa_solver.visualize(region_mask, save_path='output/expression_region.png')
 ```
 
-## Get Started
-
-Try the demo notebook for a complete walkthrough:
-
-```bash
-jupyter notebook notebooks/demo.ipynb
-```
 
 ## Extending the Framework
 
@@ -119,11 +112,6 @@ jupyter notebook notebooks/demo.ipynb
 - **Real hardware execution**: Connect to IBM Quantum or other quantum hardware
 - **Additional visualization**: Develop more specialized visualizations for biological interpretation
 
-## References
-
-This implementation is based on the theoretical foundations described in:
-- app1.md: "Quantum Computing Framework for Spatial Transcriptomics"
-- app2.md: "Quantum Spatial Transcriptomics Framework Specification"
 
 ## Citation
 
@@ -131,9 +119,9 @@ If you use this framework in your research, please cite:
 
 ```
 @software{qspat,
-  author = {Your Name},
+  author = {Vignesh S Kumar},
   title = {Quantum Spatial Transcriptomics Framework (Qspat)},
-  year = {2023},
-  url = {https://github.com/yourusername/qspat}
+  year = {2025},
+  url = {https://github.com/wikknes/qspat}
 }
 ```
